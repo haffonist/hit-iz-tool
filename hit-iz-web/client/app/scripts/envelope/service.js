@@ -22,7 +22,7 @@ angular.module('envelope').factory('EnvelopeTestCaseListLoader', ['$q','$http',
     function ($q,$http) {
         return function() {
             var delay = $q.defer();
-                $http.get("api/envelope/testcases/", {timeout: 60000}).then(
+                $http.get("api/envelope/testcases", {timeout: 60000}).then(
                     function (object) {
                         delay.resolve(angular.fromJson(object.data));
                     },

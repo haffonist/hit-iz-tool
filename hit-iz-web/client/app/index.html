@@ -84,7 +84,9 @@
     </script>
     <!--<link rel="stylesheet" href="lib/tree-grid/treeGrid.css">-->
 </head>
-<body ng-app="tool" window-exit>
+<body ng-controller="MainCtrl" ng-app="tool" window-exit>
+<notifications-bar class="notifications" closeIcon="fa fa-times-circle"></notifications-bar>
+
 <div id="wrapper">
     <!--[if lt IE 7]>
     <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade
@@ -159,12 +161,16 @@
     <!--<script src="bower_components/bootstrap-material-design/dist/js/material.min.js"></script>-->
     <!--<script src="bower_components/bootstrap-material-design/dist/js/ripples.min.js"></script>-->
     <script src="bower_components/angular-local-storage/dist/angular-local-storage.js"></script>
+    <script src="bower_components/ng-notifications-bar/dist/ngNotificationsBar.min.js"></script>
+
+    <script src="bower_components/angular-mocks/angular-mocks.js"></script>
 
     <!-- endbuild -->
 
     <!-- blueimp -->
 
     <!--<script src="lib/lrInfiniteScroll/lrInfiniteScroll.js"></script>-->
+    <script src="lib/i18n/jquery.i18n.properties-1.0.9.js"></script>
     <script src="lib/blueimp/blueimp-file-upload/js/vendor/jquery.ui.widget.js"></script>
     <script src="lib/blueimp/blueimp-load-image/js/load-image.js"></script>
     <script src="lib/blueimp/blueimp-file-upload/js/jquery.iframe-transport.js"></script>
@@ -206,6 +212,8 @@
     <!-- build:js({.tmp,app}) scripts/scripts.js -->
     <script src="scripts/app.js"></script>
     <!-- Services-->
+    <script src="scripts/i18n.js"></script>
+    <script src="scripts/base64.js"></script>
     <script src="scripts/my.resource.js"></script>
     <script src="scripts/testing/service/testing.js"></script>
     <script src="scripts/envelope/service.js"></script>
@@ -215,8 +223,11 @@
     <script src="scripts/vocab/service/vocab.js"></script>
     <script src="scripts/contact/service/contact.js"></script>
     <script src="scripts/common.js"></script>
+    <script src="scripts/main/service.js"></script>
+    <script src="scripts/account/service.js"></script>
+
     <!-- Controllers-->
-    <script src="scripts/main/controller/main.js"></script>
+    <script src="scripts/main/controller.js"></script>
     <script src="scripts/testing/controller/testing.js"></script>
     <script src="scripts/cf/controller.js"></script>
     <script src="scripts/cb/controller.js"></script>
@@ -225,10 +236,15 @@
     <script src="scripts/about/controller/about.js"></script>
     <script src="scripts/header/controller/header.js"></script>
     <script src="scripts/connectivity/controller.js"></script>
+    <script src="scripts/account/controller.js"></script>
     <script src="scripts/directives/directives.js"></script>
+    <script src="scripts/account/directive.js"></script>
 
 
     <!-- endbuild -->
+
+    <script src="dev/backendStub.js"></script>
+
 
     <div ng-include="'views/error.html'"></div>
     <div ng-include="'views/templates.html'"></div>

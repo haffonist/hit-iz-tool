@@ -1,14 +1,6 @@
 'use strict';
 angular.module('connectivity').factory('Connectivity',
     ['$rootScope', '$http', '$q', 'ConnectivityPart', 'Logger', 'Endpoint', 'SOAPConnectivityTransport', 'StorageService', function ($rootScope, $http, $q, ConnectivityPart, Logger, Endpoint, SOAPConnectivityTransport, StorageService) {
-//
-//        var initTransport = function () {
-//            var transport = new SOAPConnectivityTransport();
-//            if (StorageService.get(StorageService.USER_CONFIG_KEY) != null) {
-//                transport.config = angular.fromJson(StorageService.get(StorageService.USER_CONFIG_KEY));
-//            }
-//            return transport;
-//        };
 
         var Connectivity = {
             testCase: null,
@@ -25,19 +17,6 @@ angular.module('connectivity').factory('ConnectivityTestCaseListLoader', ['$q', 
     function ($q, $http) {
         return function () {
             var delay = $q.defer();
-//            $http.get('../../resources/connectivity/testCases.json').then(
-//                function (object) {
-//                    delay.resolve(angular.fromJson(object.data));
-//                },
-//                function (response) {
-//                    if (response.status === 404) {
-//                        delay.reject('Cannot loading testCases');
-//                    } else {
-//                        delay.reject('Unable to create the compliance types');
-//                    }
-//                }
-//            );
-//
             $http.get('api/connectivity/testcases').then(
                 function (response) {
                     delay.resolve(angular.fromJson(response.data));
@@ -64,11 +43,7 @@ angular.module('connectivity').factory('ConnectivityValidator',
             if (!SOAPEditorUtils.isXML(content)) {
                 delay.reject("Message provided is not an xml message");
             } else {
-
-//            var data = angular.fromJson({"content": this.message.content, "testCaseId": testCaseId,"userId": userId});
-
                 var data = angular.fromJson({"content": content, "testCaseId": testCaseId, "type": type, "requestMessage": reqMessage});
-
 //
 //                $http.get('../../resources/soap/result.json').then(
 //                    function (object) {
