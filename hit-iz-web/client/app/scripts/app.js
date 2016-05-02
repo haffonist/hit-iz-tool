@@ -56,13 +56,25 @@ var app = angular.module('tool', [
     'documentation',
     'hit-manual-report-viewer',
     'account',
-    'ngNotificationsBar',
-    'ngMockE2E'
+    'ngNotificationsBar'
 ]);
 
-var httpHeaders;
+var httpHeaders,
 
-app.config(function ($routeProvider, $httpProvider, localStorageServiceProvider, KeepaliveProvider, IdleProvider) {
+//the message to show on the login popup page
+    loginMessage,
+
+//the spinner used to show when we are still waiting for a server answer
+    spinner,
+
+//The list of messages we don't want to display
+    mToHide = ['usernameNotFound', 'emailNotFound', 'usernameFound', 'emailFound', 'loginSuccess', 'userAdded', 'igDocumentNotSaved', 'igDocumentSaved', 'uploadImageFailed'];
+
+//the message to be shown to the user
+var msg = {};
+
+
+app.config(function ($routeProvider, $httpProvider, localStorageServiceProvider, KeepaliveProvider, IdleProvider, notificationsConfigProvider) {
 
     localStorageServiceProvider
         .setPrefix('hit-tool')
@@ -135,28 +147,45 @@ app.config(function ($routeProvider, $httpProvider, localStorageServiceProvider,
             redirectTo: '/'
         });
 
-    $httpProvider.interceptors.push('ErrorInterceptor');
+
+    $httpProvider.interceptors.push('interceptor1');
+    $httpProvider.interceptors.push('interceptor2');
+    $httpProvider.interceptors.push('interceptor3');
+    $httpProvider.interceptors.push('interceptor4');
+
 
     IdleProvider.idle(7200);
     IdleProvider.timeout(30);
-    KeepaliveProvider.interval(10);
+    KeepaliveProvider.interval(60);
+
+
+    // auto hide
+    notificationsConfigProvider.setAutoHide(true);
+
+    // delay before hide
+    notificationsConfigProvider.setHideDelay(30000);
+
+    // delay between animation and removing the nofitication
+    notificationsConfigProvider.setAutoHideAnimationDelay(1200);
 
     httpHeaders = $httpProvider.defaults.headers;
 
 });
 
 
-app.factory('ErrorInterceptor', function ($q, $rootScope, $location, StorageService, $window) {
+app.factory('interceptor1', function ($q, $rootScope, $location, StorageService, $window) {
     var handle = function (response) {
+        console.log("interceptor1");
         if (response.status === 440) {
             response.data = "Session timeout";
             $rootScope.openSessionExpiredDlg();
         } else if (response.status === 498) {
             response.data = "Invalid Application State";
             $rootScope.openVersionChangeDlg();
-        } else if (response.status === 401) {
-            $rootScope.openInvalidReqDlg();
         }
+//        else if (response.status === 401) {
+//            $rootScope.openInvalidReqDlg();
+//        }
     };
     return {
         responseError: function (response) {
@@ -167,7 +196,127 @@ app.factory('ErrorInterceptor', function ($q, $rootScope, $location, StorageServ
 });
 
 
-app.run(function (Session, $rootScope, $location, $modal, TestingSettings, AppInfo, $q, $sce, $templateCache, $compile, StorageService, $window, $route, $timeout, $http, User, Idle, Transport, IdleService) {
+app.factory('interceptor2', function ($q, $rootScope, $location, StorageService, $window) {
+    return {
+        response: function (response) {
+            return response || $q.when(response);
+        },
+        responseError: function (response) {
+            if (response.status === 401) {
+                console.log("interceptor2");
+                //We catch everything but this one. So public users are not bothered
+                //with a login windows when browsing home.
+                if (response.config.url !== 'api/accounts/cuser') {
+                    //We don't intercept this request
+                    if (response.config.url !== 'api/accounts/login') {
+                        var deferred = $q.defer(),
+                            req = {
+                                config: response.config,
+                                deferred: deferred
+                            };
+                        $rootScope.requests401.push(req);
+                    }
+                    $rootScope.$broadcast('event:loginRequired');
+//                        return deferred.promise;
+
+                    return  $q.when(response);
+                }
+            }
+            return $q.reject(response);
+        }
+    };
+});
+
+
+app.factory('interceptor3', function ($q, $rootScope, $location, StorageService, $window) {
+    return {
+        response: function (response) {
+            //hide the spinner
+            spinner = false;
+            return response || $q.when(response);
+        },
+        responseError: function (response) {
+            console.log("interceptor3");
+            //hide the spinner
+            spinner = false;
+            return $q.reject(response);
+        }
+    };
+});
+
+app.factory('interceptor4', function ($q, $rootScope, $location, StorageService, $window) {
+    var setMessage = function (response) {
+        console.log("interceptor4");
+        //if the response has a text and a type property, it is a message to be shown
+        if (response.data && response.data.text && response.data.type) {
+            if (response.status === 401) {
+//                        console.log("setting login message");
+                console.log("401");
+                loginMessage = {
+                    text: response.data.text,
+                    type: response.data.type,
+                    skip: response.data.skip,
+                    show: true,
+                    manualHandle: response.data.manualHandle
+                };
+
+            } else if (response.status === 503) {
+                console.log("503");
+                msg = {
+                    text: "server.down",
+                    type: "danger",
+                    show: true,
+                    manualHandle: true
+                };
+            } else {
+                console.log(response.status);
+                msg = {
+                    text: response.data.text,
+                    type: response.data.type,
+                    skip: response.data.skip,
+                    show: true,
+                    manualHandle: response.data.manualHandle
+                };
+                var found = false;
+                var i = 0;
+                while (i < mToHide.length && !found) {
+                    if (msg.text === mToHide[i]) {
+                        found = true;
+                    }
+                    i++;
+                }
+                if (found === true) {
+                    msg.show = false;
+                } else {
+//                        //hide the msg in 5 seconds
+//                                                setTimeout(
+//                                                    function() {
+//                                                        msg.show = false;
+//                                                        //tell angular to refresh
+//                                                        $rootScope.$apply();
+//                                                    },
+//                                                    10000
+//                                                );
+                }
+            }
+        }
+    };
+
+    return {
+        response: function (response) {
+            setMessage(response);
+            return response || $q.when(response);
+        },
+
+        responseError: function (response) {
+            setMessage(response);
+            return $q.reject(response);
+        }
+    };
+});
+
+
+app.run(function (Session, $rootScope, $location, $modal, TestingSettings, AppInfo, $q, $sce, $templateCache, $compile, StorageService, $window, $route, $timeout, $http, User, Idle, Transport, IdleService, userInfoService, notifications, base64) {
 
 
     $rootScope.appInfo = {};
@@ -183,33 +332,47 @@ app.run(function (Session, $rootScope, $location, $modal, TestingSettings, AppIn
         return $window.location.pathname.substring(0, $window.location.pathname.indexOf("/", 2));
     }
 
-
-    Session.create().then(function (response) {
-        // load current user
-        User.load().then(function (response) {
-            Transport.init();
-        }, function (error) {
-            $rootScope.openCriticalErrorDlg("Sorry we could not create a new user for your session. Please refresh the page and try again.");
-        });
-        // load app info
-        AppInfo.get().then(function (appInfo) {
-            $rootScope.appInfo = appInfo;
-            $rootScope.apiLink = $window.location.protocol + "//" + $window.location.host + getContextPath() + $rootScope.appInfo.apiDocsPath;
-            httpHeaders.common['rsbVersion'] = appInfo.rsbVersion;
-            var previousToken = StorageService.get(StorageService.APP_STATE_TOKEN);
-            if (previousToken != null && previousToken !== appInfo.rsbVersion) {
-                $rootScope.openVersionChangeDlg();
-            }
-            StorageService.set(StorageService.APP_STATE_TOKEN, appInfo.rsbVersion);
-        }, function (error) {
-            $rootScope.appInfo = {};
-            $rootScope.openCriticalErrorDlg("Sorry we could not communicate with the server. Please try again");
-        });
+    var initUser = function(user){
+        userInfoService.setCurrentUser(user);
+        User.initUser(user);
+        Transport.init();
+    };
 
 
+    AppInfo.get().then(function (appInfo) {
+        $rootScope.appInfo = appInfo;
+        $rootScope.apiLink = $window.location.protocol + "//" + $window.location.host + getContextPath() + $rootScope.appInfo.apiDocsPath;
+        httpHeaders.common['rsbVersion'] = appInfo.rsbVersion;
+        var previousToken = StorageService.get(StorageService.APP_STATE_TOKEN);
+        if (previousToken != null && previousToken !== appInfo.rsbVersion) {
+            $rootScope.openVersionChangeDlg();
+        }
+        StorageService.set(StorageService.APP_STATE_TOKEN, appInfo.rsbVersion);
     }, function (error) {
-        $rootScope.openCriticalErrorDlg("Sorry we could not start your session. Please refresh the page and try again.");
+        $rootScope.appInfo = {};
+        $rootScope.openCriticalErrorDlg("Sorry we could not communicate with the server. Please try again");
     });
+
+//
+//    $rootScope.createGuestIfNotExistSession = function () {
+//        Session.create().then(function (response) {
+//            // load current user
+//            User.loadGuestAccont().then(function (response) {
+//                Transport.init();
+//            }, function (error) {
+//                $rootScope.openCriticalErrorDlg("Sorry we could not create a new user for your session. Please refresh the page and try again.");
+//            });
+//            loadAppInfo();
+//        }, function (error) {
+//            $rootScope.openCriticalErrorDlg("Sorry we could not start your session. Please refresh the page and try again.");
+//        });
+//    };
+
+
+//    function loadAppInfo() {
+//        // load app info
+//
+//    };
 
 
     $rootScope.$watch(function () {
@@ -259,6 +422,194 @@ app.run(function (Session, $rootScope, $location, $modal, TestingSettings, AppIn
         StorageService.set(StorageService.ACTIVE_SUB_TAB_KEY, path);
     };
 
+    //make current message accessible to root scope and therefore all scopes
+    $rootScope.msg = function () {
+        return msg;
+    };
+
+    //make current loginMessage accessible to root scope and therefore all scopes
+    $rootScope.loginMessage = function () {
+//            console.log("calling loginMessage()");
+        return loginMessage;
+    };
+
+    //showSpinner can be referenced from the view
+    $rootScope.showSpinner = function () {
+        return spinner;
+    };
+
+    $rootScope.createGuestIfNotExist = function(){
+        User.createGuestIfNotExist().then(function (guest) {
+            initUser(guest);
+        }, function (error) {
+            $rootScope.openCriticalErrorDlg("ERROR: Sorry, Failed to initialize the session. Please refresh the page and try again.");
+        });
+    };
+
+    /**
+     * Holds all the requests which failed due to 401 response.
+     */
+    $rootScope.requests401 = [];
+
+    $rootScope.$on('event:loginRequired', function () {
+//            console.log("in loginRequired event");
+        $rootScope.showLoginDialog();
+    });
+
+    /**
+     * On 'event:loginConfirmed', resend all the 401 requests.
+     */
+    $rootScope.$on('event:loginConfirmed', function () {
+        initUser(userInfoService.getCurrentUser());
+        var i,
+            requests = $rootScope.requests401,
+            retry = function (req) {
+                $http(req.config).then(function (response) {
+                    req.deferred.resolve(response);
+                });
+            };
+        for (i = 0; i < requests.length; i += 1) {
+            retry(requests[i]);
+        }
+        $rootScope.requests401 = [];
+//        $window.location.reload();
+    });
+
+    /*jshint sub: true */
+    /**
+     * On 'event:loginRequest' send credentials to the server.
+     */
+    $rootScope.$on('event:loginRequest', function (event, username, password) {
+        httpHeaders.common['Accept'] = 'application/json';
+        httpHeaders.common['Authorization'] = 'Basic ' + base64.encode(username + ':' + password);
+//        httpHeaders.common['withCredentials']=true;
+//        httpHeaders.common['Origin']="http://localhost:9000";
+        $http.get('api/accounts/login').success(function () {
+            //If we are here in this callback, login was successfull
+            //Let's get user info now
+            httpHeaders.common['Authorization'] = null;
+            $http.get('api/accounts/cuser').then(function (result) {
+                if (result.data && result.data != null) {
+                    var rs = angular.fromJson(result.data);
+                    userInfoService.setCurrentUser(rs);
+                    $rootScope.$broadcast('event:loginConfirmed');
+                } else {
+                    userInfoService.setCurrentUser(null);
+                }
+            }, function () {
+                userInfoService.setCurrentUser(null);
+            });
+        });
+    });
+
+    /**
+     * On 'logoutRequest' invoke logout on the server.
+     */
+    $rootScope.$on('event:logoutRequest', function () {
+        httpHeaders.common['Authorization'] = null;
+        userInfoService.setCurrentUser(null);
+        $http.get('j_spring_security_logout').then(function(result){
+            $rootScope.createGuestIfNotExist();
+        });
+    });
+
+    /**
+     * On 'loginCancel' clears the Authentication header
+     */
+    $rootScope.$on('event:loginCancel', function () {
+        httpHeaders.common['Authorization'] = null;
+    });
+
+    $rootScope.$on('$routeChangeStart', function (next, current) {
+//            console.log('route changing');
+        // If there is a message while change Route the stop showing the message
+        if (msg && msg.manualHandle === 'false') {
+//                console.log('detected msg with text: ' + msg.text);
+            msg.show = false;
+        }
+    });
+
+    $rootScope.$watch(function () {
+        return $rootScope.msg().text;
+    }, function (value) {
+        $rootScope.showNotification($rootScope.msg());
+    });
+
+    $rootScope.$watch('language()', function (value) {
+        $rootScope.showNotification($rootScope.msg());
+    });
+
+    $rootScope.loadFromCookie = function () {
+        if (userInfoService.hasCookieInfo() === true) {
+            //console.log("found cookie!")
+            userInfoService.loadFromCookie();
+            httpHeaders.common['Authorization'] = userInfoService.getHthd();
+        }
+        else {
+            //console.log("cookie not found");
+        }
+    };
+
+    $rootScope.showNotification = function (m) {
+        if (m != undefined && m.show && m.text != null && m.text) {
+            var msg = angular.copy(m);
+            var message = $.i18n.prop(msg.text);
+            var type = msg.type;
+            notifications.closeAll();
+            if (type === "danger") {
+                notifications.showError({message: message});
+            } else if (type === 'warning') {
+                notifications.showWarning({message: message});
+            } else if (type === 'success') {
+                notifications.showSuccess({message: message});
+            }
+            //reset
+            m.text = null;
+            m.type = null;
+            m.show = false;
+        }
+    };
+
+    $rootScope.getScrollbarWidth = function () {
+        if ($rootScope.scrollbarWidth == 0) {
+            var outer = document.createElement("div");
+            outer.style.visibility = "hidden";
+            outer.style.width = "100px";
+            outer.style.msOverflowStyle = "scrollbar"; // needed for WinJS apps
+
+            document.body.appendChild(outer);
+
+            var widthNoScroll = outer.offsetWidth;
+            // force scrollbars
+            outer.style.overflow = "scroll";
+
+            // add innerdiv
+            var inner = document.createElement("div");
+            inner.style.width = "100%";
+            outer.appendChild(inner);
+
+            var widthWithScroll = inner.offsetWidth;
+
+            // remove divs
+            outer.parentNode.removeChild(outer);
+
+            $rootScope.scrollbarWidth = widthNoScroll - widthWithScroll;
+        }
+
+        return $rootScope.scrollbarWidth;
+    };
+
+    //loadAppInfo();
+    userInfoService.loadFromServer().then(function (currentUser) {
+        console.log("currentUser=" + angular.toJson(currentUser));
+        if(currentUser != null) {
+            initUser(currentUser);
+        }else{
+            $rootScope.createGuestIfNotExist();
+        }
+    }, function (error) {
+        $rootScope.createGuestIfNotExist();
+    });
 
 });
 

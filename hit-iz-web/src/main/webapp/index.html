@@ -32,9 +32,9 @@
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-    <link rel="stylesheet" href="styles/cc325d12.vendor.css">
+    <link rel="stylesheet" href="styles/8d62b4ac.vendor.css">
     <!-- For project CSS files -->
-    <link rel="stylesheet" href="styles/5632787e.main.css">
+    <link rel="stylesheet" href="styles/e749f1b1.main.css">
 
     <!-- Custom styles for this template -->
     <script src="lib/utils.js"></script>
@@ -77,8 +77,11 @@
     </script>
     <!--<link rel="stylesheet" href="lib/tree-grid/treeGrid.css">-->
 </head>
-<body ng-app="tool" window-exit="">
+<body ng-controller="MainCtrl" ng-app="tool" window-exit="">
+<notifications-bar class="notifications" closeicon="fa fa-times-circle"></notifications-bar>
+
 <div id="wrapper">
+
     <!--[if lt IE 7]>
     <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade
         your browser</a> to improve your experience.</p>
@@ -131,11 +134,12 @@
 
     <div ng-include="'views/footer.html'"></div>
 
-    <script src="scripts/32ce5787.vendor.js"></script>
+    <script src="scripts/531b0ee3.vendor.js"></script>
 
     <!-- blueimp -->
 
     <!--<script src="lib/lrInfiniteScroll/lrInfiniteScroll.js"></script>-->
+    <script src="lib/i18n/jquery.i18n.properties-1.0.9.js"></script>
     <script src="lib/blueimp/blueimp-file-upload/js/vendor/jquery.ui.widget.js"></script>
     <script src="lib/blueimp/blueimp-load-image/js/load-image.js"></script>
     <script src="lib/blueimp/blueimp-file-upload/js/jquery.iframe-transport.js"></script>
@@ -174,7 +178,9 @@
     <script src="lib/settings/settings.js"></script>
 
 
-    <script src="scripts/085741da.scripts.js"></script>
+    <script src="scripts/81eef14f.scripts.js"></script>
+
+
 
     <div ng-include="'views/error.html'"></div>
     <div ng-include="'views/templates.html'"></div>

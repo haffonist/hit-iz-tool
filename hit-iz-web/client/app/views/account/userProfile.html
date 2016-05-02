@@ -26,7 +26,7 @@
             <div class="control-group form-group" ng-class="{'has-success has-feedback': changePasswordForm.inputNewPassword.$valid, 'igl-has-error has-feedback': !changePasswordForm.inputNewPassword.$valid}">
                 <label class="control-label col-sm-2" for="inputNewPassword"><div msg key='account.newPassword'></div></label>
                 <div class="controls col-sm-7">
-                    <input type="password" class="form-control immediate-help account-input" name="inputNewPassword" id="inputNewPassword" ng-model='accountpwd.newPassword' ng-minlength="8" ng-maxlength="20" ng-pattern="/(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z])/" ig-password-validate required
+                    <input type="password" class="form-control immediate-help account-input" name="inputNewPassword" id="inputNewPassword" ng-model='accountpwd.newPassword' ng-minlength="8" ng-maxlength="20" ng-pattern="/(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z])/" password-validate required
                            >
                     <div class="input-help">
                         <h4><div msg key='account.password.error'></div></h4>
@@ -42,7 +42,7 @@
             <div class="control-group form-group" ng-class="{'has-success has-feedback': changePasswordForm.inputNewPasswordConfirm.$valid, 'igl-has-error has-feedback': !changePasswordForm.inputNewPasswordConfirm.$valid}">
                 <label class="control-label col-sm-2" for="inputNewPasswordConfirm"><div msg key='account.newPasswordConfirm'></div></label>
                 <div class="controls col-sm-7">
-                    <input type="password" class="form-control immediate-help account-input" name="inputNewPasswordConfirm" id="inputNewPasswordConfirm" ng-model='accountpwd.newPasswordConfirm' ig-check-password="inputNewPassword" required
+                    <input type="password" class="form-control immediate-help account-input" name="inputNewPasswordConfirm" id="inputNewPasswordConfirm" ng-model='accountpwd.newPasswordConfirm' check-password="inputNewPassword" required
                           >
                     <div class="input-help">
                         <h4><div msg key='registration.passwordConfirm.error'></div></h4>

@@ -12,6 +12,7 @@
 
 package gov.nist.hit.iz.web.controller;
 
+import gov.nist.auth.hit.core.domain.Account;
 import gov.nist.hit.core.api.SessionContext;
 import gov.nist.hit.core.domain.TestStep;
 import gov.nist.hit.core.domain.Transaction;
@@ -19,7 +20,6 @@ import gov.nist.hit.core.domain.TransportConfig;
 import gov.nist.hit.core.domain.TransportMessage;
 import gov.nist.hit.core.domain.TransportRequest;
 import gov.nist.hit.core.domain.TransportResponse;
-import gov.nist.hit.core.domain.account.Account;
 import gov.nist.hit.core.domain.util.XmlUtil;
 import gov.nist.hit.core.service.AccountService;
 import gov.nist.hit.core.service.TestStepService;
@@ -54,7 +54,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -108,7 +107,6 @@ public class SOAPTransportController {
 
   @ApiOperation(value = "Start the listener of an incoming transaction",
       nickname = "startListener", notes = "A user session is required")
-  @Transactional
   @RequestMapping(value = "/startListener", method = RequestMethod.POST,
       produces = "application/json")
   public boolean startListener(
@@ -137,7 +135,6 @@ public class SOAPTransportController {
 
   @ApiOperation(value = "Stop the listener of an incoming transaction", nickname = "stopListener",
       notes = "A user session is required")
-  @Transactional
   @RequestMapping(value = "/stopListener", method = RequestMethod.POST,
       produces = "application/json")
   public boolean stopListener(
@@ -207,7 +204,6 @@ public class SOAPTransportController {
 
   @ApiOperation(value = "Send a message", nickname = "searchTransaction",
       notes = "A user session is required")
-  @Transactional()
   @RequestMapping(value = "/send", method = RequestMethod.POST, produces = "application/json")
   public Transaction send(
       @ApiParam(value = "the transport request", required = true) @RequestBody TransportRequest request,
@@ -254,7 +250,6 @@ public class SOAPTransportController {
 
   @ApiOperation(value = "Get the configuration information of user",
       nickname = "searchTransaction", notes = "A user session is required")
-  @Transactional
   @RequestMapping(value = "/configs", method = RequestMethod.POST, produces = "application/json")
   public TransportConfig configs(
       @ApiParam(value = "The user session", required = true) HttpSession session,
@@ -269,8 +264,7 @@ public class SOAPTransportController {
         transportConfigService.findOneByUserAndProtocolAndDomain(userId, PROTOCOL, DOMAIN);
     if (transportConfig == null) {
       transportConfig = transportConfigService.create(PROTOCOL, DOMAIN);
-      user.addConfig(transportConfig);
-      accountService.save(user);
+      transportConfig.setUserId(userId);
       Map<String, String> sutInitiatorConfig = sutInitiatorConfig(user, request);
       Map<String, String> taInitiatorConfig = taInitiatorConfig(user, request);
       transportConfig.setSutInitiator(sutInitiatorConfig);
@@ -295,8 +289,10 @@ public class SOAPTransportController {
     logger.info("Creating user sut initiator config information ... ");
     Map<String, String> config = new HashMap<String, String>();
     int token = new Random().nextInt(999);
-    config.put("username", "vendor_" + user.getId() + "_" + token);
-    config.put("password", "vendor_" + user.getId() + "_" + token);
+    config.put("username",
+        user.isGuestAccount() ? "vendor_" + user.getId() + "_" + token : user.getUsername());
+    config.put("password",
+        user.isGuestAccount() ? "vendor_" + user.getId() + "_" + token : user.getPassword());
     config.put("facilityID", "vendor_" + user.getId() + "_" + token);
     config.put("faultUsername", "fault_vendor_" + user.getId() + "_" + token);
     config.put("faultPassword", "fault_vendor_" + user.getId() + "_" + token);
@@ -305,7 +301,6 @@ public class SOAPTransportController {
   }
 
   @ApiOperation(value = "", nickname = "", notes = "A user session is required", hidden = true)
-  @Transactional
   @RequestMapping(value = "/populateMessage", method = RequestMethod.POST,
       produces = "application/json")
   public TransportResponse populateMessage(

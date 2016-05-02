@@ -12,7 +12,7 @@
 
 package gov.nist.hit.iz.web.config;
 
-import gov.nist.hit.core.repo.AccountRepository;
+import gov.nist.auth.hit.core.repo.AccountRepository;
 import gov.nist.hit.core.service.ResourcebundleLoader;
 import gov.nist.hit.core.service.exception.ProfileParserException;
 import gov.nist.hit.iz.domain.IZConnectivityTestPlan;

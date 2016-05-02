@@ -261,7 +261,7 @@ angular.module('account').directive('checkUsername', [ '$resource',
 'use strict';
 
 //This directive is used to check password to make sure they meet the minimum requirements
-angular.module('account').directive('igPasswordValidate', [
+angular.module('account').directive('passwordValidate', [
     function () {
         return {
             require: 'ngModel',

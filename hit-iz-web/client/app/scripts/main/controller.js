@@ -1,10 +1,9 @@
 'use strict';
 
-angular.module('tool').controller('MainCtrl', ['$scope', '$rootScope', 'i18n', '$location', 'userInfoService', '$modal', '$filter', 'base64', '$http', 'Idle', 'notifications', 'IdleService', 'StorageService', 'TestingSettings','Session','AppInfo','User',
-    function ($scope, $rootScope, i18n, $location, userInfoService, $modal, $filter, base64, $http, Idle, notifications, IdleService, StorageService, TestingSettings,Session,AppInfo,User) {
+angular.module('tool').controller('MainCtrl', ['$scope', '$rootScope', 'i18n', '$location', 'userInfoService', '$modal', '$filter', 'base64', '$http', 'Idle', 'notifications', 'IdleService', 'StorageService', 'TestingSettings','Session','AppInfo','User','$templateCache','$window',
+    function ($scope, $rootScope, i18n, $location, userInfoService, $modal, $filter, base64, $http, Idle, notifications, IdleService, StorageService, TestingSettings,Session,AppInfo,User,$templateCache,$window) {
         //This line fetches the info from the server if the user is currently logged in.
         //If success, the app is updated according to the role.
-        userInfoService.loadFromServer();
         $rootScope.loginDialog = null;
         $rootScope.started = false;
 
@@ -80,16 +79,8 @@ angular.module('tool').controller('MainCtrl', ['$scope', '$rootScope', 'i18n', '
             return userInfoService.isSupervisor();
         };
 
-        $scope.isVendor = function () {
-            return userInfoService.isAuthorizedVendor();
-        };
-
-        $scope.isAuthor = function () {
-            return userInfoService.isAuthor();
-        };
-
-        $scope.isCustomer = function () {
-            return userInfoService.isCustomer();
+        $scope.isTester = function () {
+            return userInfoService.isTester();
         };
 
         $scope.isAdmin = function () {
@@ -97,8 +88,8 @@ angular.module('tool').controller('MainCtrl', ['$scope', '$rootScope', 'i18n', '
         };
 
         $scope.getRoleAsString = function () {
-            if ($scope.isAuthor() === true) {
-                return 'author';
+            if ($scope.isTester() === true) {
+                return 'tester';
             }
             if ($scope.isSupervisor() === true) {
                 return 'Supervisor';
@@ -376,34 +367,7 @@ angular.module('tool').controller('MainCtrl', ['$scope', '$rootScope', 'i18n', '
         $rootScope.readonly = false;
         $scope.scrollbarWidth = 0;
 
-        $scope.getScrollbarWidth = function () {
-            if ($scope.scrollbarWidth == 0) {
-                var outer = document.createElement("div");
-                outer.style.visibility = "hidden";
-                outer.style.width = "100px";
-                outer.style.msOverflowStyle = "scrollbar"; // needed for WinJS apps
 
-                document.body.appendChild(outer);
-
-                var widthNoScroll = outer.offsetWidth;
-                // force scrollbars
-                outer.style.overflow = "scroll";
-
-                // add innerdiv
-                var inner = document.createElement("div");
-                inner.style.width = "100%";
-                outer.appendChild(inner);
-
-                var widthWithScroll = inner.offsetWidth;
-
-                // remove divs
-                outer.parentNode.removeChild(outer);
-
-                $scope.scrollbarWidth = widthNoScroll - widthWithScroll;
-            }
-
-            return $scope.scrollbarWidth;
-        };
 
         $rootScope.showError = function (error) {
             var modalInstance = $modal.open({

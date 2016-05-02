@@ -143,7 +143,7 @@ angular.module('tool').run(function ($httpBackend, $q, $http) {
     });
 
 
-    $httpBackend.whenPOST('api/user/current').respond(function (method, url, data, headers) {
+    $httpBackend.whenPOST('api/accounts/createGuest').respond(function (method, url, data, headers) {
         var request = new XMLHttpRequest();
         request.open('GET','../../resources/cb/user.json', false);
         request.send(null);

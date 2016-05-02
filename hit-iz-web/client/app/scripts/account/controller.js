@@ -3,8 +3,8 @@
 /* "newcap": false */
 
 angular.module('account')
-    .controller('UserProfileCtrl', ['$scope', '$resource', 'AccountLoader', 'Account', 'userInfoService', '$location',
-        function ($scope, $resource, AccountLoader, Account, userInfoService, $location) {
+    .controller('UserProfileCtrl', ['$scope', '$resource', 'AccountLoader', 'Account', 'userInfoService', '$location','Transport',
+        function ($scope, $resource, AccountLoader, Account, userInfoService, $location,Transport) {
             var PasswordChange = $resource('api/accounts/:id/passwordchange', {id:'@id'});
 
             $scope.accountpwd = {};
@@ -17,7 +17,11 @@ angular.module('account')
             $scope.updateAccount = function() {
                 //not sure it is very clean...
                 //TODO: Add call back?
-                new Account($scope.account).$save();
+                new Account($scope.account).$save().then(function(){
+                   Transport.init();
+                }, function(error){
+
+                });
 
                 $scope.accountOrig = angular.copy($scope.account);
             };
@@ -108,7 +112,7 @@ angular.module('tool')
             $scope.tmpAccountList = [].concat($scope.accountList);
             $scope.account = null;
             $scope.accountOrig = null;
-            $scope.accountType = "author";
+            $scope.accountType = "tester";
             $scope.scrollbarWidth = $scope.getScrollbarWidth();
 
 //        var PasswordChange = $resource('api/accounts/:id/passwordchange', {id:'@id'});
@@ -242,7 +246,213 @@ angular.module('tool').controller('ConfirmAccountDeleteCtrl', function ($scope, 
     };
 });
 
+angular.module('account')
+    .controller('ForgottenCtrl', ['$scope', '$resource',
+        function ($scope, $resource) {
+            var ForgottenRequest = $resource('api/sooa/accounts/passwordreset', {username:'@username'});
+
+            $scope.requestResetPassword =  function() {
+                var resetReq = new ForgottenRequest();
+                resetReq.username = $scope.username;
+                resetReq.$save(function() {
+                    if ( resetReq.text === 'resetRequestProcessed' ) {
+                        $scope.username = '';
+                    }
+                });
+            };
+        }
+    ]);
 
 
 
+'use strict';
 
+angular.module('account')
+    .controller('RegistrationCtrl', ['$scope', '$resource', '$modal', '$location',
+        function ($scope, $resource, $modal, $location) {
+            $scope.account = {};
+            $scope.registered = false;
+            $scope.agreed = false;
+
+            //Creating a type to check with the server if a username already exists.
+            var Username = $resource('api/sooa/usernames/:username', {username: '@username'});
+            var Email = $resource('api/sooa/emails/:email', {email: '@email'});
+
+            var NewAccount = $resource('api/sooa/accounts/register');
+
+            $scope.registerAccount = function() {
+                if($scope.agreed) {
+                    //console.log("Creating account");
+                    var acctToRegister = new NewAccount();
+                    acctToRegister.accountType = 'tester';
+                    acctToRegister.employer =  $scope.account.employer;
+                    acctToRegister.fullName =  $scope.account.fullName;
+                    acctToRegister.phone =  $scope.account.phone;
+                    acctToRegister.title =  $scope.account.title;
+                    acctToRegister.juridiction =  $scope.account.juridiction;
+                    acctToRegister.username =  $scope.account.username;
+                    acctToRegister.password =  $scope.account.password;
+                    acctToRegister.email =  $scope.account.email;
+                    acctToRegister.signedConfidentialityAgreement = true;
+                    acctToRegister.$save(
+                        function() {
+                            if (acctToRegister.text ===  'userAdded') {
+                                $scope.account = {};
+                                //should unfreeze the form
+                                $scope.registered = true;
+                                $location.path('/registrationSubmitted');
+                            }else{
+                                $scope.registered = false;
+                            }
+                        },
+                        function() {
+                            $scope.registered = false;
+                        }
+                    );
+                    //should freeze the form - at least the button
+                    $scope.registered = true;
+                }
+            };
+
+//        $scope.registerAccount = function() {
+//            /* Check for username already in use
+//               Verify email not already associated to an account
+//               Will need to send an email if success
+//               */
+//            var modalInstance = $modal.open({
+//                backdrop: true,
+//                keyboard: true,
+//                backdropClick: false,
+//                controller: 'AgreementCtrl',
+//                templateUrl: 'views/account/agreement.html'
+//            });
+//
+//            modalInstance.result.then(function(result) {
+//                if(result) {
+//                    //console.log("Creating account");
+//                    var acctToRegister = new NewAccount();
+//                    acctToRegister.accountType = 'provider';
+//                    acctToRegister.company =  $scope.account.company;
+//                    acctToRegister.firstname =  $scope.account.firstname;
+//                    acctToRegister.lastname =  $scope.account.lastname;
+//                    acctToRegister.username =  $scope.account.username;
+//                    acctToRegister.password =  $scope.account.password;
+//                    acctToRegister.email =  $scope.account.email;
+//                    acctToRegister.signedConfidentialityAgreement = true;
+//
+//                    acctToRegister.$save(
+//                        function() {
+//                            if (acctToRegister.text ===  'userAdded') {
+//                                $scope.account = {};
+//                                //should unfreeze the form
+//                                $scope.registered = true;
+//                                $location.path('/home');
+//                            }
+//                        },
+//                        function() {
+//                            $scope.registered = false;
+//                        }
+//                    );
+//                    //should freeze the form - at least the button
+//                    $scope.registered = true;
+//                }
+//                else {
+//                    //console.log('Account not created');
+//                }
+//            });
+//        };
+        }
+    ]);
+//
+//angular.module('account').controller('AgreementCtrl', ['$scope', '$modalInstance',
+//    function ($scope, $modalInstance) {
+//
+//        $scope.acceptAgreement =  function() {
+//            var res = true;
+//            $modalInstance.close(res);
+//        };
+//
+//        $scope.doNotAcceptAgreement =  function() {
+//            var res = false;
+//            $modalInstance.close(res);
+//        };
+//    }
+//]);
+
+
+
+'use strict';
+
+angular.module('account')
+    .controller('RegisterResetPasswordCtrl', ['$scope', '$resource', '$modal', '$routeParams', 'isFirstSetup',
+        function ($scope, $resource, $modal, $routeParams, isFirstSetup) {
+            $scope.agreed = false;
+            $scope.displayForm = true;
+            $scope.isFirstSetup = isFirstSetup;
+
+            if ( !angular.isDefined($routeParams.username) ) {
+                $scope.displayForm = false;
+            }
+            if ( $routeParams.username === '' ) {
+                $scope.displayForm = false;
+            }
+            if ( !angular.isDefined($routeParams.token) ) {
+                $scope.displayForm = false;
+            }
+            if ( $routeParams.token === '' ) {
+                $scope.displayForm = false;
+            }
+            if ( !angular.isDefined($routeParams.userId) ) {
+                $scope.displayForm = false;
+            }
+            if ( $routeParams.userId === '' ) {
+                $scope.displayForm = false;
+            }
+
+            //to register an account for the first time
+            var AcctInitPassword = $resource('api/sooa/accounts/register/:userId/passwordreset', {userId:'@userId', token:'@token'});
+            //to reset the password
+            var AcctResetPassword = $resource('api/sooa/accounts/:id/passwordreset', {id:'@userId', token:'@token'});
+
+            $scope.user = {};
+            $scope.user.username = $routeParams.username;
+            $scope.user.newUsername = $routeParams.username;
+            $scope.user.userId = $routeParams.userId;
+            $scope.user.token = $routeParams.token;
+
+
+
+//        $scope.confirmRegistration = function() {
+//            var modalInstance = $modal.open({
+//                backdrop: true,
+//                keyboard: true,
+//                backdropClick: false,
+//                controller: 'AgreementCtrl',
+//                templateUrl: 'views/agreement.html'
+//            });
+//            modalInstance.result.then(function (result) {
+//                if(result) {
+//                    var initAcctPass = new AcctInitPassword($scope.user);
+//                    initAcctPass.signedConfidentialityAgreement = true;
+//                    initAcctPass.$save(function() {
+//                        $scope.user.password = '';
+//                        $scope.user.passwordConfirm = '';
+//                    });
+//                }
+//                else {
+//                    //console.log("Agreement not accepted");
+//                }
+//            });
+//        };
+
+            $scope.changePassword = function() {
+                if($scope.agreed) {
+                    var resetAcctPass = new AcctResetPassword($scope.user);
+                    resetAcctPass.$save(function () {
+                        $scope.user.password = '';
+                        $scope.user.passwordConfirm = '';
+                    });
+                }
+            };
+        }
+    ]);

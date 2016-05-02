@@ -45,9 +45,9 @@ angular.module('account').factory('AccountLoader', ['Account', '$q',
 
 'use strict';
 
-angular.module('account').factory('Authors', ['$resource',
+angular.module('account').factory('Testers', ['$resource',
     function ($resource) {
-        return $resource('api/shortaccounts', {filter:'accountType::author'});
+        return $resource('api/shortaccounts', {filter:'accountType::tester'});
     }
 ]);
 
@@ -58,16 +58,16 @@ angular.module('account').factory('Supervisors', ['$resource',
 ]);
 
 
-angular.module('account').factory('MultiAuthorsLoader', ['Authors', '$q',
-    function (Authors, $q) {
+angular.module('account').factory('MultiTestersLoader', ['Testers', '$q',
+    function (Testers, $q) {
         return function() {
             var delay = $q.defer();
-            Authors.query(
+            Testers.query(
                 function(auth) {
                     delay.resolve(auth);
                 },
                 function() {
-                    delay.reject('Unable to fetch list of authors');
+                    delay.reject('Unable to fetch list of testers');
                 }
             );
             return delay.promise;
@@ -120,60 +120,86 @@ angular.module('account').factory('userLoaderService', ['userInfo', '$q',
         };
     }
 ]);
+'use strict';
 
-angular.module('account').factory('userInfoService', ['$cookieStore', 'userLoaderService',
-    function($cookieStore, userLoaderService) {
-        var currentUser = {
-            username : "gcr46",
-            accountId : 45,
-            authorities : []
+angular.module('account').factory('userInfo', ['$resource',
+    function ($resource) {
+        return $resource('api/accounts/cuser');
+    }
+]);
+
+angular.module('account').factory('userLoaderService', ['userInfo', '$q',
+    function (userInfo, $q) {
+        var load = function() {
+            var delay = $q.defer();
+            userInfo.get({},
+                function(theUserInfo) {
+                    delay.resolve(theUserInfo);
+                },
+                function() {
+                    delay.reject('Unable to fetch user info');
+                }
+            );
+            return delay.promise;
         };
+        return {
+            load: load
+        };
+    }
+]);
+
+angular.module('account').factory('userInfoService', ['StorageService', 'userLoaderService','User','Transport','$q','$timeout',
+    function(StorageService,userLoaderService,User,Transport,$q,$timeout) {
+        var currentUser = null;
         var supervisor = false,
-            author = false,
+            tester = false,
             admin = false,
             id = null,
             username = '',
-            fullName = '';
+            fullName= '';
 
-        //console.log("USER ID=", $cookieStore.get('userID'));
+        //console.log("USER ID=", StorageService.get('userID'));
 
         var loadFromCookie = function() {
-            //console.log("UserID=", $cookieStore.get('userID'));
+            //console.log("UserID=", StorageService.get('userID'));
 
-            id = $cookieStore.get('userID');
-            username = $cookieStore.get('username');
-            author = $cookieStore.get('author');
-            supervisor = $cookieStore.get('supervisor');
-            admin = $cookieStore.get('admin');
+            id = StorageService.get('userID');
+            username = StorageService.get('username');
+            tester = StorageService.get('tester');
+            supervisor = StorageService.get('supervisor');
+            admin = StorageService.get('admin');
         };
 
         var saveToCookie = function() {
-            $cookieStore.put('accountID', id);
-            $cookieStore.put('username', username);
-            $cookieStore.put('author', author);
-            $cookieStore.put('supervisor', supervisor);
-            $cookieStore.put('admin', admin);
+            StorageService.set('accountID', id);
+            StorageService.set('username', username);
+            StorageService.set('tester', tester);
+            StorageService.set('supervisor', supervisor);
+            StorageService.set('admin', admin);
+            StorageService.set('fullName', fullName);
         };
 
         var clearCookie = function() {
-            $cookieStore.remove('accountID');
-            $cookieStore.remove('username');
-            $cookieStore.remove('author');
-            $cookieStore.remove('supervisor');
-            $cookieStore.remove('admin');
-            $cookieStore.remove('hthd');
+            StorageService.remove('accountID');
+            StorageService.remove('username');
+            StorageService.remove('tester');
+            StorageService.remove('supervisor');
+            StorageService.remove('admin');
+            StorageService.remove('hthd');
+            StorageService.remove('fullName');
+
         };
 
         var saveHthd = function(header) {
-            $cookieStore.put('hthd', header);
+            StorageService.set('hthd', header);
         };
 
         var getHthd = function(header) {
-            return $cookieStore.get('hthd');
+            return StorageService.get('hthd');
         };
 
         var hasCookieInfo =  function() {
-            if ( $cookieStore.get('username') === '' ) {
+            if ( StorageService.get('username') === '' ) {
                 return false;
             }
             else {
@@ -192,8 +218,8 @@ angular.module('account').factory('userInfoService', ['$cookieStore', 'userLoade
             return admin;
         };
 
-        var isAuthor = function() {
-            return author;
+        var isTester = function() {
+            return tester;
         };
 
 //        var isAuthorizedVendor = function() {
@@ -213,53 +239,50 @@ angular.module('account').factory('userInfoService', ['$cookieStore', 'userLoade
         };
 
         var isAuthenticated = function() {
-//        	if ( angular.isObject(currentUser) && currentUser.authenticated === true) {
-//                return true;
-//            }
-//            else {
-//                return false;
-//            }
-            return true;
+            var res =  currentUser !== undefined && currentUser != null && currentUser.authenticated === true;
+            return res;
+//            return true;
         };
 
         var loadFromServer = function() {
-            if ( !isAuthenticated() ) {
-                userLoaderService.load().then(setCurrentUser);
-            }
+             if ( !isAuthenticated() ) {
+                 return userLoaderService.load();
+             }else{
+                 var delay = $q.defer();
+                 $timeout(function(){
+                     delay.resolve(currentUser);
+                 });
+                 return delay.promise;
+             }
+        };
+
+
+        var getCurrentUser = function() {
+            return currentUser;
         };
 
         var setCurrentUser = function(newUser) {
             currentUser = newUser;
-            //console.log("NewUser=", newUser);
-            if ( angular.isObject(currentUser) ) {
-//                console.log("currentUser -> "+currentUser);
+            if ( currentUser !== null && currentUser !== undefined ) {
                 username = currentUser.username;
                 id = currentUser.accountId;
+                fullName = currentUser.fullName;
                 if ( angular.isArray(currentUser.authorities)) {
                     angular.forEach(currentUser.authorities, function(value, key){
                         switch(value.authority)
                         {
                             case 'user':
-                                //console.log("user found");
                                 break;
                             case 'admin':
                                 admin = true;
-                                //console.log("admin found");
                                 break;
-                            case 'author':
-                                author = true;
-                                //console.log("author found");
+                            case 'tester':
+                                tester = true;
                                 break;
-//                        case 'authorizedVendor':
-//                            authorizedVendor = true;
-//                            //console.log("authorizedVendor found");
-//                            break;
                             case 'supervisor':
                                 supervisor = true;
-                                //console.log("supervisor found");
                                 break;
                             default:
-                            //console.log("default");
                         }
                     });
                 }
@@ -267,8 +290,11 @@ angular.module('account').factory('userInfoService', ['$cookieStore', 'userLoade
             }
             else {
                 supervisor = false;
-                author = false;
+                tester = false;
                 admin = false;
+                username = '';
+                id = null;
+                fullName = '';
                 //clearCookie();
             }
         };
@@ -288,14 +314,16 @@ angular.module('account').factory('userInfoService', ['$cookieStore', 'userLoade
             loadFromCookie: loadFromCookie,
             getAccountID: getAccountID,
             isAdmin: isAdmin,
-            isAuthor: isAuthor,
+            isTester: isTester,
             isAuthenticated: isAuthenticated,
             isPending: isPending,
             isSupervisor: isSupervisor,
             setCurrentUser: setCurrentUser,
+            getCurrentUser: getCurrentUser,
             loadFromServer: loadFromServer,
             getUsername: getUsername,
             getFullName: getFullName
+
         };
     }
 ]);
