@@ -55,10 +55,12 @@
                     <li ng-class="isActive('/useraccount')"><a class="point" href="#/useraccount"><i
                             class="fa fa-user"></i>&nbsp;My Profile</a></li>
                     <li role="separator" class="divider"></li>
+
                       <li ng-class="{'active':isActive('/transport-settings')}" ng-show="transportSupported"><a
                             href="#/transport-settings">
                         <i title="Transport Configuration" class="label label-danger label-icon2">T</i>
                         Transport Settings</a></li>
+                    <li role="separator" class="divider"></li>
                     <li><a ng-click="showSettings()"><i class="fa fa-check-square"></i>&nbsp; Validation Settings</a></li>
 
                     <li role="separator" class="divider"></li>
@@ -76,11 +78,13 @@
                 <ul class="dropdown-menu" >
                     <li class="">
                         <a class="point" ng-click="loginReq()"><i class="fa fa-sign-in"></i>&nbsp; <span class="msg">Login</span></a>                    </li>
+                    <li role="separator" class="divider"></li>
                     <li ng-class="isActive('/registration')">
                         <a href="#/registration">
                             <i class="fa fa-user-plus"></i>&nbsp;Register
                         </a>
                     </li>
+                    <li role="separator" class="divider"></li>
                     <li ng-class="isActive('/forgotten')">
                         <a href="#/forgotten">
                             <i class="fa fa-repeat"></i>&nbsp;Reset Password
