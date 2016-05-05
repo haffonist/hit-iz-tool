@@ -2,6 +2,7 @@
 
 angular.module('commonServices', []);
 angular.module('common', ['ngResource', 'my.resource', 'default', 'xml', 'hl7v2-edi', 'hl7v2', 'edi', 'soap']);
+angular.module('main', ['common']);
 angular.module('cf', ['common']);
 angular.module('doc', ['common']);
 angular.module('cb', ['common']);
@@ -12,7 +13,7 @@ angular.module('hit-tool-directives', []);
 angular.module('hit-tool-services', ['common']);
 angular.module('account', ['common']);
 angular.module('documentation', []);
-var app = angular.module('tool', [
+var app = angular.module('hit-tool', [
     'ngRoute',
     'ui.bootstrap',
     'ngCookies',
