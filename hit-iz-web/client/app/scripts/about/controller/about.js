@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('tool')
+angular.module('base-tool')
     .controller('AboutCtrl', ['$scope', 'AppInfo', function ($scope, AppInfo) {
 
  }]);

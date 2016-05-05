@@ -1,9 +1,10 @@
 'use strict';
 
 angular.module('commonServices', []);
-angular.module('common', ['ngResource', 'my.resource', 'default', 'xml', 'hl7v2-edi', 'hl7v2', 'edi', 'soap']);
+angular.module('common', ['ngResource', 'default', 'xml', 'hl7v2-edi', 'hl7v2', 'edi', 'soap']);
 angular.module('main', ['common']);
 angular.module('cf', ['common']);
+angular.module('base-tool', ['common']);
 angular.module('doc', ['common']);
 angular.module('cb', ['common']);
 angular.module('envelope', ['soap']);
@@ -13,7 +14,7 @@ angular.module('hit-tool-directives', []);
 angular.module('hit-tool-services', ['common']);
 angular.module('account', ['common']);
 angular.module('documentation', []);
-var app = angular.module('hit-tool', [
+var app = angular.module('base-tool', [
     'ngRoute',
     'ui.bootstrap',
     'ngCookies',
@@ -57,6 +58,7 @@ var app = angular.module('hit-tool', [
     'documentation',
     'hit-manual-report-viewer',
     'account',
+    'main',
     'ngNotificationsBar'
 ]);
 
@@ -612,6 +614,10 @@ app.run(function (Session, $rootScope, $location, $modal, TestingSettings, AppIn
         $rootScope.createGuestIfNotExist();
     });
 
+    $rootScope.getAppInfo = function(){
+        return $rootScope.appInfo;
+    };
+
 });
 
 
@@ -736,9 +742,133 @@ app.controller('FailureCtrl', [ '$scope', '$modalInstance', 'StorageService', '$
     }
 ]);
 
+/*jshint bitwise: false*/
+
+'use strict';
+
+app
+    .service('base64', function base64() {
+        // AngularJS will instantiate a singleton by calling "new" on this function
+        var keyStr = 'ABCDEFGHIJKLMNOP' +
+            'QRSTUVWXYZabcdef' +
+            'ghijklmnopqrstuv' +
+            'wxyz0123456789+/' +
+            '=';
+        this.encode = function (input) {
+            var output = '',
+                chr1, chr2, chr3 = '',
+                enc1, enc2, enc3, enc4 = '',
+                i = 0;
+
+            while (i < input.length) {
+                chr1 = input.charCodeAt(i++);
+                chr2 = input.charCodeAt(i++);
+                chr3 = input.charCodeAt(i++);
+
+                enc1 = chr1 >> 2;
+                enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+                enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+                enc4 = chr3 & 63;
+
+                if (isNaN(chr2)) {
+                    enc3 = enc4 = 64;
+                } else if (isNaN(chr3)) {
+                    enc4 = 64;
+                }
+
+                output = output +
+                    keyStr.charAt(enc1) +
+                    keyStr.charAt(enc2) +
+                    keyStr.charAt(enc3) +
+                    keyStr.charAt(enc4);
+                chr1 = chr2 = chr3 = '';
+                enc1 = enc2 = enc3 = enc4 = '';
+            }
+
+            return output;
+        };
+
+        this.decode = function (input) {
+            var output = '',
+                chr1, chr2, chr3 = '',
+                enc1, enc2, enc3, enc4 = '',
+                i = 0;
+
+            // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
+            input = input.replace(/[^A-Za-z0-9\+\/\=]/g, '');
+
+            while (i < input.length) {
+                enc1 = keyStr.indexOf(input.charAt(i++));
+                enc2 = keyStr.indexOf(input.charAt(i++));
+                enc3 = keyStr.indexOf(input.charAt(i++));
+                enc4 = keyStr.indexOf(input.charAt(i++));
+
+                chr1 = (enc1 << 2) | (enc2 >> 4);
+                chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+                chr3 = ((enc3 & 3) << 6) | enc4;
+
+                output = output + String.fromCharCode(chr1);
+
+                if (enc3 !== 64) {
+                    output = output + String.fromCharCode(chr2);
+                }
+                if (enc4 !== 64) {
+                    output = output + String.fromCharCode(chr3);
+                }
+
+                chr1 = chr2 = chr3 = '';
+                enc1 = enc2 = enc3 = enc4 = '';
+            }
+        };
+    });
 
 
 
+'use strict';
+
+app.factory('i18n', function() {
+    // AngularJS will instantiate a singleton by calling "new" on this function
+    var language;
+    var setLanguage = function (theLanguage) {
+        $.i18n.properties({
+            name: 'messages',
+            path: 'lang/',
+            mode: 'map',
+            language: theLanguage,
+            callback: function () {
+                language = theLanguage;
+            }
+        });
+    };
+    setLanguage('en');
+    return {
+        setLanguage: setLanguage
+    };
+});
+
+app.factory( 'Resource', [ '$resource', function( $resource ) {
+    return function( url, params, methods ) {
+        var defaults = {
+            update: { method: 'put', isArray: false },
+            create: { method: 'post' }
+        };
+
+        methods = angular.extend( defaults, methods );
+
+        var resource = $resource( url, params, methods );
+
+        resource.prototype.$save = function(successHandler,errorHandler) {
+            if ( !this.id ) {
+                return this.$create(successHandler,errorHandler);
+            }
+            else {
+                return this.$update(successHandler,errorHandler);
+            }
+        };
+
+        return resource;
+    };
+}]);
 
 
 

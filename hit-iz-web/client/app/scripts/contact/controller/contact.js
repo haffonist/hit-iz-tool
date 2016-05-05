@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('tool')
+angular.module('base-tool')
   .controller('ContactCtrl',['$scope', 'ContactLoader', 'ContactListLoader', function ($scope, ContactLoader, ContactListLoader) {
         $scope.init = function(){
              var promise = new ContactListLoader();

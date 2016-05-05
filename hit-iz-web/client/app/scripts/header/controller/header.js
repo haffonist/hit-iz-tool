@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('tool')
+angular.module('base-tool')
   .controller('HeaderCtrl', function ($scope, $location) {
 //
 //        $scope.activePath = '/home';

@@ -2,7 +2,7 @@
 // * Created by haffo on 2/2/15.
 // */
 
-angular.module('tool').run(function ($httpBackend, $q, $http) {
+angular.module('base-tool').run(function ($httpBackend, $q, $http) {
 
     $httpBackend.whenGET('api/session/keepAlive').respond(function (method, url, data, headers) {
         return [200, {}, {}];

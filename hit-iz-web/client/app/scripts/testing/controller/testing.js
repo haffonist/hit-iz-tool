@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('tool')
+angular.module('base-tool')
     .controller('TestingCtrl', ['$scope', '$q', '$rootScope', 'TestingSettings', function ($scope, $q, $rootScope, TestingSettings) {
         $scope.loading = false;
 
@@ -15,7 +15,7 @@ angular.module('tool')
     }]);
 
 
-angular.module('tool').controller('ValidationResultDetailsCtrl', function ($scope, $modalInstance, selectedElement) {
+angular.module('base-tool').controller('ValidationResultDetailsCtrl', function ($scope, $modalInstance, selectedElement) {
 
     $scope.selectedElement = selectedElement;
 

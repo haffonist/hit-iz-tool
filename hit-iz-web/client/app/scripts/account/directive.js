@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('tool').directive('checkEmail', [ '$resource',
+angular.module('base-tool').directive('checkEmail', [ '$resource',
     function ($resource) {
         return {
             restrict: 'AC',
@@ -40,12 +40,12 @@ angular.module('tool').directive('checkEmail', [ '$resource',
 'use strict';
 
 //This directive is used to make sure both passwords match
-angular.module('tool').directive('checkEmployer', [
+angular.module('base-tool').directive('checkEmployer', [
     function () {
         return {
             require: 'ngModel',
             link: function (scope, elem, attrs, ctrl) {
-                var employer = '#' + attrs.igCheckEmployer;
+                var employer = '#' + attrs.checkEmployer;
                 elem.add(employer).on('keyup', function () {
                     scope.$apply(function () {
 //                        console.log('Pass1=', elem.val(), ' Pass2=', $(firstPassword).val());
@@ -66,7 +66,7 @@ angular.module('account').directive('checkPassword', [
         return {
             require: 'ngModel',
             link: function (scope, elem, attrs, ctrl) {
-                var firstPassword = '#' + attrs.igCheckPassword;
+                var firstPassword = '#' + attrs.checkPassword;
                 elem.add(firstPassword).on('keyup', function () {
                     scope.$apply(function () {
 //                        console.log('Pass1=', elem.val(), ' Pass2=', $(firstPassword).val());
