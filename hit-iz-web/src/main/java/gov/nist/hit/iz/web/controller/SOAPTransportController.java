@@ -26,6 +26,7 @@ import gov.nist.hit.core.service.TestStepService;
 import gov.nist.hit.core.service.TransactionService;
 import gov.nist.hit.core.service.TransportConfigService;
 import gov.nist.hit.core.service.TransportMessageService;
+import gov.nist.hit.core.service.UserService;
 import gov.nist.hit.core.service.exception.DuplicateTokenIdException;
 import gov.nist.hit.core.service.exception.TestCaseException;
 import gov.nist.hit.core.service.exception.TransportException;
@@ -79,6 +80,11 @@ public class SOAPTransportController {
 
   @Autowired
   protected AccountService accountService;
+
+
+  @Autowired
+  protected UserService userService;
+
 
   @Autowired
   protected TransactionService transactionService;
@@ -260,6 +266,7 @@ public class SOAPTransportController {
     if (userId == null || (user = accountService.findOne(userId)) == null) {
       throw new UserNotFoundException();
     }
+
     TransportConfig transportConfig =
         transportConfigService.findOneByUserAndProtocolAndDomain(userId, PROTOCOL, DOMAIN);
     if (transportConfig == null) {
@@ -291,8 +298,9 @@ public class SOAPTransportController {
     int token = new Random().nextInt(999);
     config.put("username",
         user.isGuestAccount() ? "vendor_" + user.getId() + "_" + token : user.getUsername());
-    config.put("password",
-        user.isGuestAccount() ? "vendor_" + user.getId() + "_" + token : user.getPassword());
+    if (user.isGuestAccount()) {
+      config.put("password", "vendor_" + user.getId() + "_" + token);
+    }
     config.put("facilityID", "vendor_" + user.getId() + "_" + token);
     config.put("faultUsername", "fault_vendor_" + user.getId() + "_" + token);
     config.put("faultPassword", "fault_vendor_" + user.getId() + "_" + token);
