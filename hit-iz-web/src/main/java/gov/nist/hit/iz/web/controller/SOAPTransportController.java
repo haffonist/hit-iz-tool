@@ -22,6 +22,7 @@ import gov.nist.hit.core.domain.TransportRequest;
 import gov.nist.hit.core.domain.TransportResponse;
 import gov.nist.hit.core.domain.util.XmlUtil;
 import gov.nist.hit.core.service.AccountService;
+import gov.nist.hit.core.service.PasswordService;
 import gov.nist.hit.core.service.TestStepService;
 import gov.nist.hit.core.service.TransactionService;
 import gov.nist.hit.core.service.TransportConfigService;
@@ -97,6 +98,9 @@ public class SOAPTransportController {
 
   @Autowired
   private IZSOAPWebServiceClient webServiceClient;
+
+  @Autowired
+  private PasswordService passwordService;
 
 
   private final static String PROTOCOL = "soap";
@@ -298,9 +302,8 @@ public class SOAPTransportController {
     int token = new Random().nextInt(999);
     config.put("username",
         user.isGuestAccount() ? "vendor_" + user.getId() + "_" + token : user.getUsername());
-    if (user.isGuestAccount()) {
-      config.put("password", "vendor_" + user.getId() + "_" + token);
-    }
+    config.put("password", user.isGuestAccount() ? "vendor_" + user.getId() + "_" + token
+        : passwordService.getEncryptedPassword(user.getUsername()));
     config.put("facilityID", "vendor_" + user.getId() + "_" + token);
     config.put("faultUsername", "fault_vendor_" + user.getId() + "_" + token);
     config.put("faultPassword", "fault_vendor_" + user.getId() + "_" + token);
